@@ -167,11 +167,21 @@ public class Point implements Comparable<Point> {
 
         /*----------  Test slopeTo  ----------*/
 
+        p = new Point(4, 5);
+
+        // vertical
+        q = new Point(4, 6);
+        assert p.slopeTo(q) == Double.POSITIVE_INFINITY;
+        q = new Point(4, 2);
         assert p.slopeTo(q) == Double.POSITIVE_INFINITY;
 
+        // horizontal
         q = new Point(6, 5);
         assert p.slopeTo(q) == 0;
+        q = new Point(1, 5);
+        assert p.slopeTo(q) == 0;
 
+        // degenerate
         q = new Point(4, 5);
         assert p.slopeTo(q) == Double.NEGATIVE_INFINITY;
 
@@ -184,13 +194,30 @@ public class Point implements Comparable<Point> {
         q = new Point(7, 14);
         assert p.slopeTo(q) == 3;
 
+
         /*----------  Test slopeOrder  ----------*/
 
-        p = new Point(0, 0);
-        q = new Point(1, 2);
+        p = new Point(2, 2);
+        q = new Point(3, 5);
         Point r = new Point(0, 1);
         Comparator<Point> cmp = p.slopeOrder();
-        System.out.println(cmp.compare(q, r));;
+
+        // 3 > 0.5
+        assert cmp.compare(q, r) == 1;
+        // 0.5 < 3
+        assert cmp.compare(q, q) == 0;
+
+        q = new Point(3, 2);
+        r = new Point(2, 3);
+        // 0 < infin
+        assert cmp.compare(q, r) == -1;
+        // infin > 0
+        assert cmp.compare(r, q) ==  1;
+        // -infin < 0
+        assert cmp.compare(p, q) == -1;
+        // -infin < infin
+        assert cmp.compare(p, r) == -1;
+
 
 
     }
