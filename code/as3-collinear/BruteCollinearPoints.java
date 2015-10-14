@@ -46,17 +46,22 @@ public class BruteCollinearPoints {
                     if (r == null) throw new java.lang.NullPointerException();
 
                     double p_to_r = p.slopeTo(r);
+                    if (p_to_r == Double.NEGATIVE_INFINITY) throw new java.lang.IllegalArgumentException();
 
                     // don't bother checking s, already not collinear
                     if (p_to_q != p_to_r) continue;
 
-                    for (int l = 0; l < points.length; l++) {
+                    for (int l = k + 1; l < points.length; l++) {
                         Point s = points[l];
                         if (s == null) throw new java.lang.NullPointerException();
 
                         double p_to_s = p.slopeTo(s);
+                        if (p_to_s == Double.NEGATIVE_INFINITY) throw new java.lang.IllegalArgumentException();
 
                         if (p_to_s == p_to_q) {
+
+                            System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
+
                             // Find extremes
                             smallest = p;
                             largest = p;
@@ -116,9 +121,9 @@ public class BruteCollinearPoints {
      */
     public LineSegment[] segments() {
         // the line segments
-        LineSegment[] cp = new LineSegment[segments.length * 2];
-        for (int m = 0; m < segments.length; m++) {
-            cp[m] = segments[m];
+        LineSegment[] cp = new LineSegment[size];
+        for (int i = 0; i < size; i++) {
+            cp[i] = segments[i];
         }
         return cp;
     }
@@ -134,6 +139,7 @@ public class BruteCollinearPoints {
         for (int i = 0; i < N; i++) {
             int x = in.readInt();
             int y = in.readInt();
+            System.out.println("Point: " + x + ", " + y);
             points[i] = new Point(x, y);
         }
 
