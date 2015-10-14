@@ -117,15 +117,20 @@ public class Point implements Comparable<Point> {
      *  with the invoking point (x0, y0). Formally, the point (x1, y1) is
      *  less than the point (x2, y2) if and only if the slope
      *  (y1 − y0) / (x1 − x0) is less than the slope (y2 − y0) / (x2 − x0).
-     *  Treat horizontal, vertical, and degenerate line segments as in the slopeTo() method.
+     *  Treat horizontal, vertical, and degenerate line segments as in the
+     *  slopeTo() method.
      *
      */
     private class SlopeOrder implements Comparator<Point> {
         public int compare(Point p, Point q) {
-            Double to_p = slopeTo(p);
-            Double to_q = slopeTo(q);
-
-            return to_p.compareTo(to_q);
+            double to_p = slopeTo(p);
+            double to_q = slopeTo(q);
+            if (to_p < to_q) {
+                return -1;
+            } else if (to_p > to_q) {
+                return 1;
+            }
+            return 0;
         }
     }
 
@@ -148,6 +153,8 @@ public class Point implements Comparable<Point> {
     public static void main(String[] args) {
         Point p = new Point(4, 5);
         Point q = new Point(4, 5);
+        p.draw();
+        q.draw();
 
         /*----------  Test compareTo  ----------*/
 
@@ -218,7 +225,7 @@ public class Point implements Comparable<Point> {
         // -infin < infin
         assert cmp.compare(p, r) == -1;
 
-
+        System.out.println("All tests passed :-)");
 
     }
 }
