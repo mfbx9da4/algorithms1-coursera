@@ -63,12 +63,16 @@ public class Point implements Comparable<Point> {
         double dx = this.x - that.x;
 
         if (dx == 0 && dy == 0) {
+            // degenerate
             return Double.NEGATIVE_INFINITY;
         } else if (dy == 0) {
+            // horizontal
             return 0;
         } else if (dx == 0) {
+            // vertical
             return Double.POSITIVE_INFINITY;
         } else {
+            // slope
             return dy / dx;
         }
     }

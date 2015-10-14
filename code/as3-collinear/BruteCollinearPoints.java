@@ -1,4 +1,6 @@
-import edu.princeton.cs.algs4.StdRandom;
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.StdDraw;
 
 
 public class BruteCollinearPoints {
@@ -17,6 +19,11 @@ public class BruteCollinearPoints {
      */
     public BruteCollinearPoints(Point[] points) {
         // finds all line segments containing 4 points
+
+        if (points == null) {
+            throw new java.lang.NullPointerException();
+        }
+
         Point smallest;
         Point largest;
         segments = new LineSegment[1];
@@ -24,14 +31,20 @@ public class BruteCollinearPoints {
 
         for (int i = 0; i < points.length; i++) {
             Point p = points[i];
+            if (p == null) throw new java.lang.NullPointerException();
 
             outerloop:
             for (int j = i + 1; j < points.length; j++) {
                 Point q = points[j];
+                if (q == null) throw new java.lang.NullPointerException();
+
                 double p_to_q = p.slopeTo(q);
+                if (p_to_q == Double.NEGATIVE_INFINITY) throw new java.lang.IllegalArgumentException();
 
                 for (int k = j + 1; k < points.length; k++) {
                     Point r = points[k];
+                    if (r == null) throw new java.lang.NullPointerException();
+
                     double p_to_r = p.slopeTo(r);
 
                     // don't bother checking s, already not collinear
@@ -39,10 +52,11 @@ public class BruteCollinearPoints {
 
                     for (int l = 0; l < points.length; l++) {
                         Point s = points[l];
+                        if (s == null) throw new java.lang.NullPointerException();
+
                         double p_to_s = p.slopeTo(s);
 
                         if (p_to_s == p_to_q) {
-                            System.out.println("Found line segment");
                             // Find extremes
                             smallest = p;
                             largest = p;
@@ -70,7 +84,6 @@ public class BruteCollinearPoints {
 
                             // add line segment to segments
                             segments[size++] = ls;
-                            System.out.println(size);
 
                             // break and increment p
                             break outerloop;
@@ -110,13 +123,30 @@ public class BruteCollinearPoints {
      * Unit tests the Point data type.
      */
     public static void main(String[] args) {
-        Point[] points = new Point[30];
-        for (int i = 0; i < points.length; i++) {
-            int x = StdRandom.uniform(30);
-            int y = StdRandom.uniform(30);
+        // read the N points from a file
+        In in = new In(args[0]);
+        int N = in.readInt();
+        Point[] points = new Point[N];
+        for (int i = 0; i < N; i++) {
+            int x = in.readInt();
+            int y = in.readInt();
             points[i] = new Point(x, y);
         }
 
-        new BruteCollinearPoints(points);
+        // draw the points
+        StdDraw.show(0);
+        StdDraw.setXscale(0, 32768);
+        StdDraw.setYscale(0, 32768);
+        for (Point p : points) {
+            p.draw();
+        }
+        StdDraw.show();
+
+        // print and draw the line segments
+        BruteCollinearPoints collinear = new BruteCollinearPoints(points);
+        for (LineSegment segment : collinear.segments()) {
+            StdOut.println(segment);
+            segment.draw();
+        }
     }
 }
