@@ -101,7 +101,7 @@ public class BruteCollinearPoints {
 
     public int numberOfSegments() {
        // the number of line segments
-        return 0;
+        return size;
     }
 
     /**
@@ -116,7 +116,11 @@ public class BruteCollinearPoints {
      */
     public LineSegment[] segments() {
         // the line segments
-        return segments;
+        LineSegment[] cp = new LineSegment[segments.length * 2];
+        for (int m = 0; m < segments.length; m++) {
+            cp[m] = segments[m];
+        }
+        return cp;
     }
 
     /**
