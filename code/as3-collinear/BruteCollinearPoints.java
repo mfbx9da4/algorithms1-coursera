@@ -24,8 +24,6 @@ public class BruteCollinearPoints {
             throw new java.lang.NullPointerException();
         }
 
-        Point smallest;
-        Point largest;
         segments = new LineSegment[1];
         size = 0;
 
@@ -60,35 +58,10 @@ public class BruteCollinearPoints {
 
                         if (p_to_s == p_to_q) {
 
-                            System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
+                            // System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
 
-                            // Find extremes
-                            smallest = p;
-                            largest = p;
-                            Point[] other_points = {q, r, s};
-                            for (int m = 0; m < other_points.length; m++) {
-                                Point point = other_points[m];
-                                if (point.compareTo(largest) == 1) {
-                                    largest = point;
-                                } else if (point.compareTo(smallest) == -1) {
-                                    smallest = point;
-                                }
-                            }
-
-                            // create line segment
-                            LineSegment ls = new LineSegment(smallest, largest);
-
-                            // resize array
-                            if (size == segments.length) {
-                                LineSegment[] cp = new LineSegment[segments.length * 2];
-                                for (int m = 0; m < segments.length; m++) {
-                                    cp[m] = segments[m];
-                                }
-                                segments = cp;
-                            }
-
-                            // add line segment to segments
-                            segments[size++] = ls;
+                            Point[] segment_points = {p, q, r, s};
+                            addLineSegment(segment_points);
 
                             // break and increment p
                             break outerloop;
@@ -103,6 +76,48 @@ public class BruteCollinearPoints {
         }
 
     }
+
+    private void addLineSegment (Point[] segment_points) {
+        Point[] extremes = findExtremes(segment_points);
+
+        // create line segment
+        LineSegment ls = new LineSegment(extremes[0], extremes[1]);
+
+        resizeArray();
+
+        // add line segment to segments
+        segments[size++] = ls;
+    }
+
+    private void resizeArray () {
+        // resize array
+        if (size == segments.length) {
+            LineSegment[] cp = new LineSegment[segments.length * 2];
+            for (int m = 0; m < segments.length; m++) {
+                cp[m] = segments[m];
+            }
+            segments = cp;
+        }
+    }
+
+
+    private Point[] findExtremes(Point[] segment_points) {
+        // Find extremes
+        Point smallest = segment_points[0];
+        Point largest = segment_points[0];
+        for (int m = 1; m < segment_points.length; m++) {
+            Point point = segment_points[m];
+            if (point.compareTo(largest) == 1) {
+                largest = point;
+            } else if (point.compareTo(smallest) == -1) {
+                smallest = point;
+            }
+        }
+
+        Point[] extremes = {smallest, largest};
+        return extremes;
+    }
+
 
     public int numberOfSegments() {
        // the number of line segments
@@ -139,7 +154,7 @@ public class BruteCollinearPoints {
         for (int i = 0; i < N; i++) {
             int x = in.readInt();
             int y = in.readInt();
-            System.out.println("Point: " + x + ", " + y);
+            // System.out.println("Point: " + x + ", " + y);
             points[i] = new Point(x, y);
         }
 
