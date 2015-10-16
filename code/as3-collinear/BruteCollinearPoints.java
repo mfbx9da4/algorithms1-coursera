@@ -7,6 +7,7 @@ public class BruteCollinearPoints {
 
     private LineSegment[] segments;
     private int size;
+    private boolean verbose = false;
 
     /**
      *
@@ -58,7 +59,7 @@ public class BruteCollinearPoints {
 
                         if (p_to_s == p_to_q) {
 
-                            System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
+                            if (verbose) System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
 
                             Point[] segment_points = {p, q, r, s};
                             addLineSegment(segment_points);
@@ -154,7 +155,6 @@ public class BruteCollinearPoints {
         for (int i = 0; i < N; i++) {
             int x = in.readInt();
             int y = in.readInt();
-            // System.out.println("Point: " + x + ", " + y);
             points[i] = new Point(x, y);
         }
 

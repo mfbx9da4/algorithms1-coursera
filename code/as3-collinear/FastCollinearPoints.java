@@ -43,8 +43,6 @@ public class FastCollinearPoints {
         }
 
         this.points = points;
-        Point smallest;
-        Point largest;
         segments = new LineSegment[1];
         size = 0;
 
@@ -64,22 +62,9 @@ public class FastCollinearPoints {
             // Applying this method for each of the N points
 
             Point p = points[i];
-            if (verbose) {
-                System.out.println("");
-                System.out.println("-------------- Next p " + i + " " + p);
-            }
+            if (verbose) System.out.println("\n-------------- Next p " + i + " " + p);
             if (p == null) throw new java.lang.NullPointerException();
 
-            // send copy to Array.sort with one less element
-            // would be better to sort from i + 1 to end of aux
-            // instead of creating another temp array
-
-            // System.out.println("removing " + points[i]);
-            // Point[] temp = new Point[points.length - i];
-            // for (int n = 0; n < points.length - i; n++) {
-            //     temp[n] = points[n+i];
-            // }
-            // aux = temp;
             Arrays.sort(aux, p.slopeOrder());
 
             // init counter for first slope for first q
@@ -87,11 +72,7 @@ public class FastCollinearPoints {
             double prev_slope = p.slopeTo(aux[0]);
             int collinear_count = 1;
             boolean inOrder = true;
-            if (verbose) {
-                System.out.println("First q ");
-                System.out.println(collinear_count + " with slope " + prev_slope + " q " + aux[0]);
-            }
-
+            Point max_point = p;
 
             // all other q, other than those not seen
             for (int j = 1; j < aux.length; j++) {
@@ -103,47 +84,51 @@ public class FastCollinearPoints {
                 else if (p_to_q == prev_slope) {
                     // same slope as adjacent slope
                     collinear_count++;
+
                     if (p.compareTo(q) > 0) {
+                        // p is bigger than q
                         inOrder = false;
-                    }
-                    if (verbose) {
-                        System.out.println(collinear_count + " with slope " + p_to_q + " ordered " + inOrder + " q " + q);
+                    } else if (max_point.compareTo(q) < 0) {
+                        // q is the biggest q in the segment
+                        max_point = q;
                     }
 
+                    if (verbose) System.out.println(collinear_count + " with slope " + p_to_q + " ordered " + inOrder + " q " + q);
 
-                    // on last element
+                    // on last element check for line now
+                    // because there will be no more new slopes
                     if (j == aux.length - 1) {
-                        checkForLineSegment(inOrder, collinear_count, i, j);
+                        checkForLineSegment(inOrder, collinear_count, p, max_point);
                     }
 
                 } else {
-                    // q is not part of line segment
+                    // new slope
 
-                    // check if previous q formed line segment
-                    checkForLineSegment(inOrder, collinear_count, i, j-1);
+                    // check if previous slope formed line segment
+                    checkForLineSegment(inOrder, collinear_count, p, max_point);
 
                     // reset for new slope
                     prev_slope = p_to_q;
                     collinear_count = 1;
                     inOrder = p.compareTo(q) < 0;
+                    max_point = q;
 
-                    if (verbose) {
-                        System.out.println("New slope");
-                        System.out.println(collinear_count + " with slope " + p_to_q + " ordered " + inOrder + " q " + q);
-                    }
+                    if (verbose) System.out.println(collinear_count + " with slope " + p_to_q + " ordered " + inOrder + " q " + q);
                 }
             }
         }
 
     }
 
-    private void checkForLineSegment (boolean inOrder, int collinear_count, int i, int j) {
+    private void checkForLineSegment (boolean inOrder, int collinear_count, Point min, Point max) {
         if (inOrder && collinear_count > 2) {
             // found line segment
-            if (verbose) System.out.println("Found line segment");
-            Point[] segment_points = getSegmentPoints(i, j, collinear_count);
+            if (verbose) System.out.println("Found line segment " + min + " => " + max);
 
-            addLineSegment(segment_points);
+            // Point[] segment_points = getSegmentPoints(i, j, collinear_count);
+            // Point[] extremes = findExtremes(segment_points);
+
+            addLineSegment(min, max);
         }
     }
 
@@ -171,12 +156,10 @@ public class FastCollinearPoints {
 
     }
 
-    private void addLineSegment (Point[] segment_points) {
-
-        Point[] extremes = findExtremes(segment_points);
+    private void addLineSegment (Point smallest, Point largest) {
 
         // create line segment
-        LineSegment ls = new LineSegment(extremes[0], extremes[1]);
+        LineSegment ls = new LineSegment(smallest, largest);
 
         resizeArray();
 
@@ -237,9 +220,31 @@ public class FastCollinearPoints {
         return cp;
     }
 
-    /**
-     * Unit tests the Point data type.
-     */
     public static void main(String[] args) {
+        // read the N points from a file
+        In in = new In(args[0]);
+        int N = in.readInt();
+        Point[] points = new Point[N];
+        for (int i = 0; i < N; i++) {
+            int x = in.readInt();
+            int y = in.readInt();
+            points[i] = new Point(x, y);
+        }
+
+        // draw the points
+        StdDraw.show(0);
+        StdDraw.setXscale(0, 32768);
+        StdDraw.setYscale(0, 32768);
+        for (Point p : points) {
+            p.draw();
+        }
+        StdDraw.show();
+
+        // print and draw the line segments
+        FastCollinearPoints collinear = new FastCollinearPoints(points);
+        for (LineSegment segment : collinear.segments()) {
+            StdOut.println(segment);
+            segment.draw();
+        }
     }
 }
