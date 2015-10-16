@@ -1,6 +1,7 @@
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.StdDraw;
+import edu.princeton.cs.algs4.StdRandom;
 import java.util.Arrays;
 
 public class TestClient {
@@ -22,14 +23,20 @@ public class TestClient {
         StdDraw.setXscale(0, 32768);
         StdDraw.setYscale(0, 32768);
         for (Point p : points) {
+            StdDraw.setPenRadius(.025);
             p.draw();
         }
         StdDraw.show();
 
         // print and draw the line segments
         FastCollinearPoints collinear = new FastCollinearPoints(points);
+        // BruteCollinearPoints collinear = new BruteCollinearPoints(points);
+        int i = 0;
         for (LineSegment segment : collinear.segments()) {
             StdOut.println(segment);
+            StdDraw.setPenRadius(.01);
+            StdDraw.setPenColor(StdRandom.uniform(255), StdRandom.uniform(255), StdRandom.uniform(255));
+            StdDraw.text(15000, 1000 * ++i, segment.toString());
             segment.draw();
         }
     }

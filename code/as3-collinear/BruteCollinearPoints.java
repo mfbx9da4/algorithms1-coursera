@@ -58,7 +58,7 @@ public class BruteCollinearPoints {
 
                         if (p_to_s == p_to_q) {
 
-                            // System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
+                            System.out.println("Slope " + p_to_q + ": " + p + "-" + q + "-" + r + "-" + s);
 
                             Point[] segment_points = {p, q, r, s};
                             addLineSegment(segment_points);

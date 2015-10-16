@@ -6,7 +6,10 @@ import java.util.Arrays;
 public class FastCollinearPoints {
 
     private LineSegment[] segments;
+    private Point[] points;
+    private Point[] aux;
     private int size;
+    private boolean verbose = false;
 
     /**
      * A faster, sorting-based solution. Remarkably, it is possible to solve the
@@ -39,19 +42,20 @@ public class FastCollinearPoints {
             throw new java.lang.NullPointerException();
         }
 
+        this.points = points;
         Point smallest;
         Point largest;
         segments = new LineSegment[1];
         size = 0;
 
         // copy to auxillary array for sorting
-        Point[] aux = new Point[points.length];
+        this.aux = new Point[points.length];
         for (int i = 0; i < points.length; i++) {
             aux[i] = points[i];
         }
 
 
-        for (int i = 0; i < points.length - 1; i++) {
+        for (int i = 0; i < points.length; i++) {
             // For each other point q, determine the slope it makes with p.
             // Sort the points according to the slopes they makes with p.
             // Check if any 3 (or more) adjacent points in the sorted order have equal
@@ -60,48 +64,89 @@ public class FastCollinearPoints {
             // Applying this method for each of the N points
 
             Point p = points[i];
-            System.out.println("Next p " + i + " " + p);
+            if (verbose) {
+                System.out.println("");
+                System.out.println("-------------- Next p " + i + " " + p);
+            }
             if (p == null) throw new java.lang.NullPointerException();
+
+            // send copy to Array.sort with one less element
+            // would be better to sort from i + 1 to end of aux
+            // instead of creating another temp array
+
+            // System.out.println("removing " + points[i]);
+            // Point[] temp = new Point[points.length - i];
+            // for (int n = 0; n < points.length - i; n++) {
+            //     temp[n] = points[n+i];
+            // }
+            // aux = temp;
             Arrays.sort(aux, p.slopeOrder());
 
             // init counter for first slope for first q
-            System.out.println("First q " + aux[i+1]);
-            double prev_slope = p.slopeTo(aux[i+1]);
+            // which is actually p
+            double prev_slope = p.slopeTo(aux[0]);
             int collinear_count = 1;
+            boolean inOrder = true;
+            if (verbose) {
+                System.out.println("First q ");
+                System.out.println(collinear_count + " with slope " + prev_slope + " q " + aux[0]);
+            }
 
-            // all other q
-            for (int j = i+2; j < aux.length; j++) {
+
+            // all other q, other than those not seen
+            for (int j = 1; j < aux.length; j++) {
                 Point q = aux[j];
                 double p_to_q = p.slopeTo(q);
+
                 if (p_to_q == Double.NEGATIVE_INFINITY) throw new java.lang.IllegalArgumentException();
 
                 else if (p_to_q == prev_slope) {
                     // same slope as adjacent slope
                     collinear_count++;
-                    System.out.println("Incremented to " + collinear_count + " current q " + q);
-                } else {
-                    // q is not part of line segment
-                    System.out.println("Not adjacent " + collinear_count + " current q " + q);
-
-                    if (collinear_count > 2) {
-                        // found line segment
-                        System.out.println("/*----------  Found line segment  ----------*/");
-
-                        Point[] segment_points = getSegmentPoints(aux, i, j - 1, collinear_count);
-
-                        addLineSegment(segment_points);
-
+                    if (p.compareTo(q) > 0) {
+                        inOrder = false;
+                    }
+                    if (verbose) {
+                        System.out.println(collinear_count + " with slope " + p_to_q + " ordered " + inOrder + " q " + q);
                     }
 
-                    // reset counter
+
+                    // on last element
+                    if (j == aux.length - 1) {
+                        checkForLineSegment(inOrder, collinear_count, i, j);
+                    }
+
+                } else {
+                    // q is not part of line segment
+
+                    // check if previous q formed line segment
+                    checkForLineSegment(inOrder, collinear_count, i, j-1);
+
+                    // reset for new slope
                     prev_slope = p_to_q;
                     collinear_count = 1;
-                }
+                    inOrder = p.compareTo(q) < 0;
 
+                    if (verbose) {
+                        System.out.println("New slope");
+                        System.out.println(collinear_count + " with slope " + p_to_q + " ordered " + inOrder + " q " + q);
+                    }
+                }
             }
         }
 
     }
+
+    private void checkForLineSegment (boolean inOrder, int collinear_count, int i, int j) {
+        if (inOrder && collinear_count > 2) {
+            // found line segment
+            if (verbose) System.out.println("Found line segment");
+            Point[] segment_points = getSegmentPoints(i, j, collinear_count);
+
+            addLineSegment(segment_points);
+        }
+    }
+
 
     /**
      *
@@ -110,26 +155,24 @@ public class FastCollinearPoints {
      * @param  collinear_count  Count of collinear points excluding origin.
      *
      */
-    private Point[] getSegmentPoints(Point[] aux, int origin_idx, int last_idx, int collinear_count) {
+    private Point[] getSegmentPoints(int origin_idx, int last_idx, int collinear_count) {
         Point[] segment_points = new Point[collinear_count + 1];
 
-        // Put the origin at the end of the array of points
-        segment_points[collinear_count] = aux[origin_idx];
-        System.out.println("origin: " + aux[origin_idx]);
+        // Put the origin at the beginning of the array of points
+        segment_points[0] = this.points[origin_idx];
 
-        System.out.println("count " + collinear_count);
         // Goes from last point of segment to beginning
         for (int k = 0; k < collinear_count; k++) {
-            System.out.println(last_idx + ", " + k + "==>" + (last_idx - k));
-            segment_points[k] = aux[last_idx - k];
-            System.out.println("point: " + segment_points[k]);
+            segment_points[k+1] = this.aux[last_idx + (k - (collinear_count - 1))];
         }
+        if (verbose) System.out.println(Arrays.toString(segment_points));
 
         return segment_points;
 
     }
 
     private void addLineSegment (Point[] segment_points) {
+
         Point[] extremes = findExtremes(segment_points);
 
         // create line segment
