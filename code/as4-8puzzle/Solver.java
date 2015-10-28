@@ -12,8 +12,8 @@ public class Solver {
     private boolean isSolvable;
 
     private final class SearchNode implements Comparable<SearchNode> {
-        private Board board;
-        private SearchNode previous;
+        public Board board;
+        public SearchNode previous;
         public int moves;
 
         public SearchNode(Board board, SearchNode previous, int moves) {
@@ -23,7 +23,7 @@ public class Solver {
         }
 
         public int priority() {
-            return board.manhattan() + moves;
+            return moves + board.manhattan() + board.hamming();
         }
 
         public int compareTo(SearchNode that) {
@@ -65,7 +65,7 @@ public class Solver {
                 break;
             } else {
                 // enqueue neighbors
-                moves++;
+                moves = current.moves + 1;
                 enqueueNeighbors(queue, current);
                 enqueueNeighbors(twin_queue, current_twin);
             }

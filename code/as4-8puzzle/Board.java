@@ -3,8 +3,7 @@ import java.util.Iterator;
 import java.util.Arrays;
 
 
-
-final public class Board {
+public class Board {
     private int[][] blocks;
     private boolean verbose = false;
     private int manhattan_score = 0;
@@ -30,7 +29,8 @@ final public class Board {
     public Board(int[][] blocks) {
         // construct a board from an N-by-N array of blocks
         // (where blocks[i][j] = block in row i, column j)
-        this.blocks = blocks;
+
+        this.blocks = new int[blocks.length][blocks.length];
 
         int goal_i;
         int goal_j;
@@ -38,6 +38,7 @@ final public class Board {
         for (int i = 0; i < blocks.length; i++) {
             for (int j = 0; j < blocks[i].length; j++) {
                 int block = blocks[i][j];
+                this.blocks[i][j] = block;
 
                 // update hamming score
                 if (!(i == dimension() - 1 && j == dimension() - 1)) {
@@ -156,6 +157,10 @@ final public class Board {
         }
 
         Board that = (Board) y;
+
+        if (dimension() != that.dimension()) {
+            return false;
+        }
 
         for (int i = 0; i < blocks.length; i++) {
             for (int j = 0; j < blocks[i].length; j++) {
