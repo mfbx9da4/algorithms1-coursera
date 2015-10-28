@@ -87,12 +87,20 @@ public class Solver {
 
     public int moves()                     {
         // min number of moves to solve initial board; -1 if unsolvable
-        return moves;
+        if (isSolvable) {
+            return moves;
+        } else {
+            return -1;
+        }
     }
 
     public Iterable<Board> solution()      {
         // sequence of boards in a shortest solution; null if unsolvable
-        return partials;
+        if (isSolvable) {
+            return partials;
+        } else {
+            return null;
+        }
     }
 
     public static void main(String[] args) {
@@ -114,7 +122,7 @@ public class Solver {
 
         // print solution to standard output
         if (!solver.isSolvable())
-            StdOut.println("No solution possible");
+            StdOut.println("No solution possible " + solver.moves());
         else {
             StdOut.println("Minimum number of moves = " + solver.moves());
             for (Board board : solver.solution())
