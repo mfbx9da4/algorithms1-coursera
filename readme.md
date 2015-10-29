@@ -3,7 +3,7 @@
 - Code from assignments can be found in `code/` directory
 - Books and lecture slides can be found in `resources/`
 
-[Install algs4](http://coursera.cs.princeton.edu/algs4/assignments/percolation.html)
+[Install algs4](http://algs4.cs.princeton.edu/linux/)
 
 
 run with 

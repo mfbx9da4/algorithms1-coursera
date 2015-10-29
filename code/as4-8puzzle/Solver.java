@@ -1,3 +1,4 @@
+import java.util.Iterator;
 import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.StdOut;
@@ -7,7 +8,7 @@ import edu.princeton.cs.algs4.In;
 public class Solver {
     private MinPQ<SearchNode> queue = new MinPQ<SearchNode>();
     private MinPQ<SearchNode> twin_queue = new MinPQ<SearchNode>();
-    private Queue<Board> partials = new Queue<Board>();
+    private Board[] partials = new Board[2];
     private int moves;
     private boolean isSolvable;
 
@@ -49,11 +50,30 @@ public class Solver {
         solve();
     }
 
+    private void saveNode(SearchNode node) {
+        resizeArray();
+        int i = node.moves;
+        partials[i] = node.board;
+        System.out.println(node.board + " Moves " + i);
+    }
+
+    private void resizeArray () {
+        // resize array
+        if (moves == partials.length) {
+            Board[] cp = new Board[partials.length * 2];
+            for (int m = 0; m < partials.length; m++) {
+                cp[m] = partials[m];
+            }
+            partials = cp;
+        }
+    }
+
+
     private void solve() {
         while (true) {
             SearchNode current = queue.delMin();
             SearchNode current_twin = twin_queue.delMin();
-            partials.enqueue(current.board);
+            saveNode(current);
 
             if (current.board.isGoal()) {
                 // solved
@@ -97,11 +117,43 @@ public class Solver {
     public Iterable<Board> solution()      {
         // sequence of boards in a shortest solution; null if unsolvable
         if (isSolvable) {
-            return partials;
+            return new PartialsIterable();
         } else {
             return null;
         }
     }
+
+    private class PartialsIterable implements Iterable<Board> {
+        public Iterator<Board> iterator() {
+            return new PartialsIterator();
+        }
+
+        private class PartialsIterator implements Iterator<Board> {
+
+            private int i = 0;
+            private Board current;
+            private Board next = partials[i];
+
+
+            public boolean hasNext() {
+                return partials.length > i && partials[i] != null;
+            }
+
+            public void remove() {
+                throw new java.lang.UnsupportedOperationException();
+            }
+
+            public Board next() {
+
+                if (!hasNext()) {
+                    throw new java.util.NoSuchElementException();
+                }
+                return partials[i++];
+            }
+        }
+
+    }
+
 
     public static void main(String[] args) {
         // solve a slider puzzle (given below)
