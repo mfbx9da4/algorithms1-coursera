@@ -1,3 +1,4 @@
+import java.util.Iterator;
 import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.StdOut;
@@ -6,8 +7,8 @@ import edu.princeton.cs.algs4.In;
 
 public class Solver {
     private MinPQ<SearchNode> queue = new MinPQ<SearchNode>();
-    private MinPQ<SearchNode> twin_queue = new MinPQ<SearchNode>();
-    private Queue<Board> partials = new Queue<Board>();
+    private MinPQ<SearchNode> twinQueue = new MinPQ<SearchNode>();
+    private SearchNode goalNode;
     private int moves;
     private boolean isSolvable;
 
@@ -39,27 +40,27 @@ public class Solver {
 
     }
 
-    public Solver(Board initial_board)           {
+    public Solver(Board initialBoard)           {
         // find a solution to the initial board (using the A* algorithm)
-        if (initial_board == null) throw new java.lang.NullPointerException();
-        SearchNode initial = new SearchNode(initial_board, null, 0);
-        SearchNode initial_twin = new SearchNode(initial_board.twin(), null, 0);
+        if (initialBoard == null) throw new java.lang.NullPointerException();
+        SearchNode initial = new SearchNode(initialBoard, null, 0);
+        SearchNode initialTwin = new SearchNode(initialBoard.twin(), null, 0);
         queue.insert(initial);
-        twin_queue.insert(initial_twin);
+        twinQueue.insert(initialTwin);
         solve();
     }
 
     private void solve() {
         while (true) {
             SearchNode current = queue.delMin();
-            SearchNode current_twin = twin_queue.delMin();
-            partials.enqueue(current.board);
+            SearchNode currentTwin = twinQueue.delMin();
 
             if (current.board.isGoal()) {
                 // solved
+                goalNode = current;
                 isSolvable = true;
                 break;
-            } else if (current_twin.board.isGoal()) {
+            } else if (currentTwin.board.isGoal()) {
                 // twin solved
                 isSolvable = false;
                 break;
@@ -67,7 +68,7 @@ public class Solver {
                 // enqueue neighbors
                 moves = current.moves + 1;
                 enqueueNeighbors(queue, current);
-                enqueueNeighbors(twin_queue, current_twin);
+                enqueueNeighbors(twinQueue, currentTwin);
             }
         }
     }
@@ -97,11 +98,56 @@ public class Solver {
     public Iterable<Board> solution()      {
         // sequence of boards in a shortest solution; null if unsolvable
         if (isSolvable) {
-            return partials;
+            return new PartialsIterable();
         } else {
             return null;
         }
     }
+
+    private class PartialsIterable implements Iterable<Board> {
+        public Iterator<Board> iterator() {
+            return new PartialsIterator();
+        }
+
+        private class PartialsIterator implements Iterator<Board> {
+
+            private int i;
+            private Board current;
+            private Board next;
+            private int totalBoards = moves + 1; // +1 for first board
+            private Board[] partials = new Board[totalBoards];
+
+
+            public PartialsIterator() {
+                i = 1;
+                SearchNode cur = goalNode;
+                while (i < totalBoards + 1) {
+                    partials[totalBoards - i++] = cur.board;
+                    cur = cur.previous;
+                }
+                i = 0;
+            }
+
+
+            public boolean hasNext() {
+                return partials.length > i && partials[i] != null;
+            }
+
+            public void remove() {
+                throw new java.lang.UnsupportedOperationException();
+            }
+
+            public Board next() {
+
+                if (!hasNext()) {
+                    throw new java.util.NoSuchElementException();
+                }
+                return partials[i++];
+            }
+        }
+
+    }
+
 
     public static void main(String[] args) {
         // solve a slider puzzle (given below)
