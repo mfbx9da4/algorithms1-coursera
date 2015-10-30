@@ -141,7 +141,8 @@ public class Solver {
      * Inserts neighboring boards of a current node's board, provided the
      * neighbor is not equal to the current node's parent board. If the current
      * board is the initial board, ie took 0 moves, it has no parent and we
-     * ignore this check.
+     * ignore this check. Here we always increment the number of moves based on
+     * the number of moves to get to the parent.
      *
      * @param heap Min heap to insert onto (inital/twin).
      * @param current The current select node.
@@ -150,7 +151,8 @@ public class Solver {
     private void enheapNeighbors(MinPQ<SearchNode> heap, SearchNode current) {
         for (Board neighbor : current.board.neighbors()) {
             if (current.moves == 0 || neighbor != current.previous.board) {
-                heap.insert(new SearchNode(neighbor, current, current.moves + 1));
+                SearchNode neighborNode = new SearchNode(neighbor, current, current.moves + 1);
+                heap.insert(neighborNode);
             }
         }
     }
