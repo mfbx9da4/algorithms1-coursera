@@ -8,15 +8,23 @@ public class Board {
     private boolean verbose = false;
     private int manhattan_score = 0;
     private int hamming_score = 0;
-    private int free_i;
-    private int free_j;
-    private Location free;
+    private MatrixIndex free;
 
-    private final class Location {
-        public final int i;
-        public final int j;
+    /**
+     *
+     * Helper class for matrix indices.
+     *
+     */
+    private class MatrixIndex {
+        public int i;
+        public int j;
 
-        public Location (int i, int j) {
+        public MatrixIndex(int i, int j) {
+            this.i = i;
+            this.j = j;
+        }
+
+        public void reset(int i, int j) {
             this.i = i;
             this.j = j;
         }
@@ -26,57 +34,81 @@ public class Board {
         }
     }
 
+    /**
+     *
+     * Construct a board from an N-by-N array of blocks and calculate hamming
+     * and manhattan scores.
+     *
+     *
+     */
     public Board(int[][] blocks) {
-        // construct a board from an N-by-N array of blocks
-        // (where blocks[i][j] = block in row i, column j)
-
         this.blocks = new int[blocks.length][blocks.length];
 
-        int goal_i;
-        int goal_j;
-        int goal;
         for (int i = 0; i < blocks.length; i++) {
             for (int j = 0; j < blocks[i].length; j++) {
-                int block = blocks[i][j];
-                this.blocks[i][j] = block;
-
-                // update hamming score
-                if (!(i == dimension() - 1 && j == dimension() - 1)) {
-                    // calculate goal value for this cell
-                    goal = i * dimension() + j + 1;
-                    if (verbose) {
-                        System.out.println(i + "," + j + " " + block + " is " + goal + "?" );
-                    }
-                    if (block != goal) {
-                        hamming_score ++;
-                    }
-                }
-
-                if (block == 0) {
-                    // save location of free square
-                    free = new Location(i, j);
-                    free_i = i;
-                    free_j = j;
-                } else {
-                    // calculate goal position for this value
-                    goal_i = (block - 1) / dimension();
-                    goal_j = (block - 1) % dimension();
-
-                    // calculate vertical and horizontal distances
-                    int distance = Math.abs(i - goal_i) + Math.abs(j - goal_j);
-
-                    // update manhattan_score
-                    manhattan_score += distance;
-
-                    if (verbose) {
-                        System.out.println(block + " from " + i + "," + j + " to " + goal_i + "," + goal_j + " = " + distance);
-                    }
-                }
-
-
+                this.blocks[i][j] = blocks[i][j];
+                updateHammingScore(i, j);
+                updateManhattanScore(i, j);
             }
         }
 
+    }
+
+    /**
+     *
+     * Update manhattan score for particular block location i j. Calculate goal
+     * position for value, sum vertical and horizontal distance from goal
+     * position and add to manhattan score. If is the free cell, save its
+     * location and don't calulcate score.
+     *
+     * @param i Block row position.
+     * @param j Block col position.
+     *
+     */
+    private void updateManhattanScore(int i, int j) {
+        int value = blocks[i][j];
+        if (value == 0) {
+            // save MatrixIndex of free square
+            free = new MatrixIndex(i, j);
+        } else {
+            // calculate goal position for this value
+            int goal_i = (value - 1) / dimension();
+            int goal_j = (value - 1) % dimension();
+
+            // calculate vertical and horizontal distances
+            int distance = Math.abs(i - goal_i) + Math.abs(j - goal_j);
+
+            // update manhattan_score
+            manhattan_score += distance;
+
+            if (verbose) {
+                // System.out.println(value + " from " + i + "," + j + " to " + goal_i + "," + goal_j + " = " + distance);
+            }
+        }
+    }
+
+    /**
+     *
+     * Update hamming score for particular block position, if it is not the free
+     * cell. Incremeent score if block not in correct cell.
+     *
+     * @param i Block row position.
+     * @param j Block col position.
+     *
+     */
+    private void updateHammingScore(int i, int j) {
+        // if not free cell
+        if (!(i == dimension() - 1 && j == dimension() - 1)) {
+            // calculate goal value for this cell
+            int goal = i * dimension() + j + 1;
+            if (blocks[i][j] != goal) {
+                hamming_score ++;
+            }
+
+            if (verbose) {
+                // System.out.println(i + "," + j + " " + block + " is " + goal + "?" );
+            }
+        }
     }
 
     public int dimension() {
@@ -99,48 +131,68 @@ public class Board {
         return hamming() == 0;
     }
 
+    /**
+     *
+     * A board that is obtained by exchanging any pair of blocks. Find first
+     * pair of non free blocks and createMovedBoard exchanging these blocks.
+     *
+     * @return A board with a pair of exchanged blocks.
+     *
+     */
+
     public Board twin() {
-        // a board that is obtained by exchanging any pair of blocks
-        Location src = findNextBlock(new Location(0, 0));
-        Location dest = findNextBlock(incrementLocation(src));
-        return createMovedBoard(src, dest);
+        MatrixIndex nonFreeBlock1 = new MatrixIndex(0, 0);
+        findNextBlock(nonFreeBlock1);
+
+        MatrixIndex nonFreeBlock2 = new MatrixIndex(nonFreeBlock1.i, nonFreeBlock1.j);
+        incrementMatrixIndex(nonFreeBlock2);
+        findNextBlock(nonFreeBlock2);
+
+        if (verbose) {
+            System.out.println(nonFreeBlock1 + " " + nonFreeBlock2);
+        }
+        return createMovedBoard(nonFreeBlock1, nonFreeBlock2);
     }
 
-    private boolean isFreeBlock(Location loc) {
+    private boolean isFreeBlock(MatrixIndex loc) {
         return loc.i == free.i && loc.j == free.j;
     }
 
-    private boolean inBounds(Location loc) {
+    private boolean inBounds(MatrixIndex loc) {
         return loc.i >= 0 && loc.i < dimension() && loc.j >= 0 && loc.j < dimension();
     }
 
-    private Location incrementLocation(Location loc) {
+    private void incrementMatrixIndex(MatrixIndex loc) {
         int block = loc.i * dimension() + loc.j + 1;
-        return new Location((block) / dimension(), (block) % dimension());
+        loc.reset((block) / dimension(), (block) % dimension());
     }
 
-    private Location findNextBlock(Location cursor) {
+    private void findNextBlock(MatrixIndex cursor) {
         // ensures is not free block
         while (isFreeBlock(cursor) || !inBounds(cursor)){
-            cursor = incrementLocation(cursor);
+            incrementMatrixIndex(cursor);
         }
-        return cursor;
     }
 
-    private Board createMovedBoard(Location src, Location dest) {
-        return createMovedBoard(src.i, src.j, dest.i, dest.j);
-    }
-
-    private Board createMovedBoard(int src_i, int src_j, int dest_i, int dest_j) {
-        int[][] twin_blocks = new int[dimension()][dimension()];
-        for (int i = 0; i < blocks.length; i++) {
-            for (int j = 0; j < blocks[i].length; j++) {
-                twin_blocks[i][j] = blocks[i][j];
-            }
-        }
-        twin_blocks[src_i][src_j] = blocks[dest_i][dest_j];
-        twin_blocks[dest_i][dest_j] = blocks[src_i][src_j];
-        return new Board(twin_blocks);
+    /**
+     *
+     * Exchanges src, dest indicies specified, creates board, switches blocks
+     * back to original positions and returns board.
+     *
+     * @param src Source index.
+     * @param dest Destination index.
+     * @return Returns board where src and destination indices have been
+     *         swapped.
+     *
+     */
+    private Board createMovedBoard(MatrixIndex src, MatrixIndex dest) {
+        int srcVal = blocks[src.i][src.j];
+        blocks[src.i][src.j] = blocks[dest.i][dest.j];
+        blocks[dest.i][dest.j] = srcVal;
+        Board movedBoard = new Board(blocks);
+        blocks[dest.i][dest.j] = blocks[src.i][src.j];
+        blocks[src.i][src.j] = srcVal;
+        return movedBoard;
     }
 
     public boolean equals(Object y) {
@@ -187,46 +239,46 @@ public class Board {
         private class NeighborIterator implements Iterator<Board> {
 
             private int directions_checked = 0;
-            // private positions;
-            private int left = free_j - 1;
-            private int right = free_j + 1;
-            private int top = free_i - 1;
-            private int bottom = free_i + 1;
+            private int left = free.j - 1;
+            private int right = free.j + 1;
+            private int top = free.i - 1;
+            private int bottom = free.i + 1;
+            private MatrixIndex move = new MatrixIndex(-1, -1);
             private Board current;
             private Board next = nextBoard();
 
 
-            private boolean hasNextMove() {
-                return directions_checked < 4;
+            private boolean hasExhaustedDirections() {
+                return directions_checked >= 4;
             }
 
-            private int[] getNextMove() {
-                int[] move = new int[2];
-                move[0] = free_i;
-                move[1] = free_j;
-
+            private void getNextMove() {
                 if (directions_checked == 0) {
-                    move[1] = left;
+                    move.reset(free.i, left);
                 } else if (directions_checked == 1) {
-                    move[1] = right;
+                    move.reset(free.i, right);
                 } else if (directions_checked == 2) {
-                    move[0] = top;
+                    move.reset(top, free.j);
                 } else if (directions_checked == 3) {
-                    move[0] = bottom;
+                    move.reset(bottom, free.j);
                 }
-                return move;
             }
 
-            private boolean moveInBounds(int[] move) {
-                return move[0] >= 0 && move[0] < dimension() && move[1] >= 0 && move[1] < dimension();
-            }
-
+            /**
+             *
+             * Check if move in particular direction is in bounds. If in bounds
+             * create moved board, else try next direction until exhausted all
+             * directions.
+             *
+             * @return moved board in a particular direction.
+             *
+             */
             private Board nextBoard () {
-                while (hasNextMove()) {
-                    int[] move = getNextMove();
+                while (!hasExhaustedDirections()) {
+                    getNextMove();
                     directions_checked++;
-                    if (moveInBounds(move)) {
-                        return createMovedBoard(free_i, free_j, move[0], move[1]);
+                    if (inBounds(move)) {
+                        return createMovedBoard(free, move);
                     }
                 }
                 return null;

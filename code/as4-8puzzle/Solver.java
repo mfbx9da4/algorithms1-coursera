@@ -1,32 +1,72 @@
 import java.util.Iterator;
 import edu.princeton.cs.algs4.MinPQ;
-import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.In;
 
 
 public class Solver {
-    private MinPQ<SearchNode> queue = new MinPQ<SearchNode>();
-    private MinPQ<SearchNode> twinQueue = new MinPQ<SearchNode>();
+    private MinPQ<SearchNode> initialHeap = new MinPQ<SearchNode>();
+    private MinPQ<SearchNode> twinHeap = new MinPQ<SearchNode>();
     private SearchNode goalNode;
-    private int moves;
     private boolean isSolvable;
+    private boolean verbose = false;
 
-    private final class SearchNode implements Comparable<SearchNode> {
-        public Board board;
-        public SearchNode previous;
-        public int moves;
+    /**
+     *
+     * Each search node of A* algorithm, represents
+     * a specific board and has a link to its parent
+     * board (previous) and the number of moves to
+     * reach this specific board.
+     *
+     */
+    private static final class SearchNode implements Comparable<SearchNode> {
+        private Board board;
+        private SearchNode previous;
+        private int moves;
 
+        /**
+         *
+         * Constructor.
+         *
+         * @param board specific board for this search node
+         * @param previous link to parent node
+         * @param moves number of moves since start to reach this node
+         *
+         */
         public SearchNode(Board board, SearchNode previous, int moves) {
             this.board = board;
             this.previous = previous;
             this.moves = moves;
         }
 
+
+
+        /**
+         *
+         * Critical priority function for determining priority
+         * of SearchNode in priority queue.
+         *
+         * Hamming priority: Number of blocks in wrong position + number of
+         *                   moves.
+         *
+         * Manhattan priority: Sum of vertical + horizontal distances of blocks
+         *                     to their goal positions + number of moves.
+         *
+         * Total moves to solve the puzzle for a given search node is at least
+         * manhattan or priority function.
+         *
+         */
         public int priority() {
-            return moves + board.manhattan() + board.hamming();
+            return moves + board.manhattan();
         }
 
+        /**
+         *
+         * Compares two search nodes.
+         *
+         * @param  that The other search node.
+         *
+         */
         public int compareTo(SearchNode that) {
             int this_score = this.priority();
             int that_score = that.priority();
@@ -40,63 +80,109 @@ public class Solver {
 
     }
 
-    public Solver(Board initialBoard)           {
-        // find a solution to the initial board (using the A* algorithm)
+
+    /**
+     *
+     * Find a solution to the initial board (using the A* algorithm). A twin
+     * board is created and solved in parallel because the initial board may not
+     * be solvable and if this is the case the twin board will be solvable.
+     * The boards are inserted onto their respective heaps and the solve method
+     * recurses on their neighbors.
+     *
+     * @param initialBoard the starting board.
+     *
+     */
+    public Solver(Board initialBoard) {
         if (initialBoard == null) throw new java.lang.NullPointerException();
         SearchNode initial = new SearchNode(initialBoard, null, 0);
-        SearchNode initialTwin = new SearchNode(initialBoard.twin(), null, 0);
-        queue.insert(initial);
-        twinQueue.insert(initialTwin);
+        SearchNode twin = new SearchNode(initialBoard.twin(), null, 0);
+        if (verbose) {
+            System.out.println("Starting board\n" + initial.board);
+            System.out.println("Twin\n" + twin.board);
+        }
+        initialHeap.insert(initial);
+        twinHeap.insert(twin);
         solve();
     }
 
+    /**
+     *
+     * The main A* algorithm. The node with the smallest priority is removed
+     * from the heap and we insert its neighbors on to the heap. We perform this
+     * for both initial board and twin board. We stop when the initial or twin
+     * board reaches the goal board.
+     *
+     */
     private void solve() {
         while (true) {
-            SearchNode current = queue.delMin();
-            SearchNode currentTwin = twinQueue.delMin();
+            // dequeue node with smallest priority
+            SearchNode initial = initialHeap.delMin();
+            SearchNode twin = twinHeap.delMin();
 
-            if (current.board.isGoal()) {
+            if (initial.board.isGoal()) {
                 // solved
-                goalNode = current;
+                goalNode = initial;
                 isSolvable = true;
                 break;
-            } else if (currentTwin.board.isGoal()) {
+            } else if (twin.board.isGoal()) {
                 // twin solved
                 isSolvable = false;
                 break;
             } else {
-                // enqueue neighbors
-                moves = current.moves + 1;
-                enqueueNeighbors(queue, current);
-                enqueueNeighbors(twinQueue, currentTwin);
+                // enheap neighbors
+                enheapNeighbors(initialHeap, initial);
+                enheapNeighbors(twinHeap, twin);
             }
         }
     }
 
-    private void enqueueNeighbors(MinPQ<SearchNode> queue, SearchNode current) {
+    /**
+     *
+     * Inserts neighboring boards of a current node's board, provided the
+     * neighbor is not equal to the current node's parent board. If the current
+     * board is the initial board, ie took 0 moves, it has no parent and we
+     * ignore this check.
+     *
+     * @param heap Min heap to insert onto (inital/twin).
+     * @param current The current select node.
+     *
+     */
+    private void enheapNeighbors(MinPQ<SearchNode> heap, SearchNode current) {
         for (Board neighbor : current.board.neighbors()) {
-            if (current.previous == null || neighbor != current.previous.board) {
-                queue.insert(new SearchNode(neighbor, current, moves));
+            if (current.moves == 0 || neighbor != current.previous.board) {
+                heap.insert(new SearchNode(neighbor, current, current.moves + 1));
             }
         }
     }
 
-    public boolean isSolvable()            {
-        // is the initial board solvable?
+    /**
+     *
+     * @return Is the inital board solvable.
+     *
+     */
+    public boolean isSolvable() {
         return isSolvable;
     }
 
-    public int moves()                     {
-        // min number of moves to solve initial board; -1 if unsolvable
+    /**
+     *
+     * @return min number of moves to solve initial board; -1 if unsolvable
+     *
+     */
+    public int moves() {
         if (isSolvable) {
-            return moves;
+            return goalNode.moves;
         } else {
             return -1;
         }
     }
 
-    public Iterable<Board> solution()      {
-        // sequence of boards in a shortest solution; null if unsolvable
+    /**
+     *
+     * @return sequence of boards in a shortest solution; null if unsolvable
+     *
+     */
+    public Iterable<Board> solution() {
         if (isSolvable) {
             return new PartialsIterable();
         } else {
@@ -110,14 +196,16 @@ public class Solver {
         }
 
         private class PartialsIterator implements Iterator<Board> {
-
             private int i;
-            private Board current;
-            private Board next;
-            private int totalBoards = moves + 1; // +1 for first board
+            private int totalBoards = goalNode.moves + 1; // +1 for first board
             private Board[] partials = new Board[totalBoards];
 
-
+            /**
+             *
+             * Constructor creates array of moves tracing back from goalBoard
+             * to first node.
+             *
+             */
             public PartialsIterator() {
                 i = 1;
                 SearchNode cur = goalNode;
@@ -171,9 +259,12 @@ public class Solver {
             StdOut.println("No solution possible " + solver.moves());
         else {
             StdOut.println("Minimum number of moves = " + solver.moves());
-            for (Board board : solver.solution())
+            int i = 0;
+            for (Board board : solver.solution()) {
+                System.out.println(i++);
                 StdOut.println(board);
+            }
         }
     }
-
 }
+
