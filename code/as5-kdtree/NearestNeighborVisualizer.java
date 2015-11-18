@@ -39,6 +39,8 @@ public class NearestNeighborVisualizer {
             double x = StdDraw.mouseX();
             double y = StdDraw.mouseY();
             Point2D query = new Point2D(x, y);
+            // Point2D query = new Point2D(0.9, 0.5);
+            // Point2D query = new Point2D(0.975528, 0.654508);
 
 
             // draw all of the points
@@ -47,6 +49,9 @@ public class NearestNeighborVisualizer {
             StdDraw.setPenColor(StdDraw.BLACK);
             StdDraw.setPenRadius(.01);
             brute.draw();
+            StdDraw.setPenRadius(.03);
+            StdDraw.setPenColor(StdDraw.YELLOW);
+            query.draw();
 
             // draw in red the nearest neighbor (using brute-force algorithm)
             StdDraw.setPenRadius(.03);

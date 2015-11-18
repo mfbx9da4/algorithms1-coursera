@@ -100,18 +100,20 @@ public class PointSET {
 		double nearest_dist = Double.POSITIVE_INFINITY;
 		boolean nearest_has_been_set = false;
 
+		if (setPoints.isEmpty()) {
+			return null;
+		}
+
 		for (Point2D q : setPoints) {
 			double dist = p.distanceTo(q);
-			if (dist != 0) {
-				if (!nearest_has_been_set) {
+			if (!nearest_has_been_set) {
+				nearest = q;
+				nearest_dist = dist;
+				nearest_has_been_set = true;
+			} else {
+				if (dist < nearest_dist) {
 					nearest = q;
 					nearest_dist = dist;
-					nearest_has_been_set = true;
-				} else {
-					if (dist < nearest_dist) {
-						nearest = q;
-						nearest_dist = dist;
-					}
 				}
 			}
 		}

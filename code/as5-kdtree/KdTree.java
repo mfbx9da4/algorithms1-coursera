@@ -9,9 +9,10 @@ import edu.princeton.cs.algs4.StdOut;
 
 public class KdTree {
     private Node root;
-    private int size;
+    private int size = 0;
     private Point2D nearestPoint;
     private double nearestDist = Double.POSITIVE_INFINITY;
+    private boolean verbose = false;
 
     private class Node {
         private Point2D key;
@@ -47,15 +48,17 @@ public class KdTree {
         if (current == null) {
             size++;
             return new Node(p, size);
+        } else if (current.key.equals(p)) {
+            return current;
         }
 
-        Comparator<Point2D> comparator = Point2D.Y_ORDER;
-        if (isVertical) {comparator = Point2D.X_ORDER;}
-        isVertical = !isVertical;
-
-        int cmp = comparator.compare(p, current.key);
-        if (cmp < 0) {current.left = insert(p, current.left, isVertical);}
-        else         {current.right = insert(p, current.right, isVertical);}
+        int cmp = comparePoints(p, current.key, isVertical);
+        if (cmp < 0)      {current.left = insert(p, current.left, !isVertical);}
+        else if (cmp > 0) {current.right = insert(p, current.right, !isVertical);}
+        else if (p != current.key) {
+            // on the same plane but is a new point
+            current.right = insert(p, current.right, !isVertical);
+        }
         return current;
     }
 
@@ -65,18 +68,20 @@ public class KdTree {
     }
 
     private boolean contains(Point2D p, Node current, boolean isVertical) {
-        if (current == null) {return false;}
+        if (current == null)            {return false;}
+        else if (current.key.equals(p)) {return true;}
 
-        Comparator<Point2D> comparator = Point2D.Y_ORDER;
-        if (isVertical) {comparator = Point2D.X_ORDER;}
-        isVertical = !isVertical;
-
-        int cmp = comparator.compare(p, current.key);
-        if (cmp < 0)      {contains(p, current.left, isVertical);}
-        else if (cmp > 0) {contains(p, current.right, isVertical);}
-        return true;
+        int cmp = comparePoints(p, current.key, isVertical);
+        if (cmp < 0)      {return contains(p, current.left, !isVertical);}
+        else              {return contains(p, current.right, !isVertical);}
     }
 
+    private int comparePoints(Point2D p, Point2D q, boolean isVertical) {
+        Comparator<Point2D> comparator = Point2D.Y_ORDER;
+        if (isVertical) {comparator = Point2D.X_ORDER;}
+
+        return comparator.compare(p, q);
+    }
 
     public void draw()  {
         // draw all points to standard draw
@@ -129,8 +134,6 @@ public class KdTree {
         }
 
         private class RangeIterator implements Iterator<Point2D> {
-            private Node current;
-            private Node next = root;
             private ListItem currentItem;
             private ListItem nextItem;
             private ListItem rootItem;
@@ -171,9 +174,9 @@ public class KdTree {
 
                 if (isVertical) {
                     // left
-                    subrect = new RectHV(xmin, ymin, xmax, current.key.y());
+                    subrect = new RectHV(xmin, ymin, current.key.x(), ymax);
                     if (rect.intersects(subrect)) {
-                        rangeSearch(current.left, !isVertical, xmin, ymin, xmax, current.key.y());
+                        rangeSearch(current.left, !isVertical, xmin, ymin, current.key.x(), ymax);
                     }
 
                     // right
@@ -183,9 +186,9 @@ public class KdTree {
                     }
                 } else {
                     // below
-                    subrect = new RectHV(xmin, ymin, current.key.x(), ymax);
+                    subrect = new RectHV(xmin, ymin, xmax, current.key.y());
                     if (rect.intersects(subrect)) {
-                        rangeSearch(current.left, !isVertical, xmin, ymin, current.key.x(), ymax);
+                        rangeSearch(current.left, !isVertical, xmin, ymin, xmax, current.key.y());
                     }
 
                     // above
@@ -194,11 +197,6 @@ public class KdTree {
                         rangeSearch(current.right, !isVertical, xmin, current.key.y(), xmax, ymax);
                     }
                 }
-            }
-
-            private Node nextNode() {
-                rangeSearch(next, true, 0, 0, 1, 1);
-                return null;
             }
 
             public boolean hasNext() {
@@ -226,13 +224,15 @@ public class KdTree {
         if (isEmpty()) {
             return null;
         }
-        System.out.println("\nFind nearest to " + query);
+        if (verbose) {
+            System.out.println("\nFind nearest to " + query);
+        }
         nearest(root, true, query, 0, 0, 1, 1);
         this.nearestDist = Double.POSITIVE_INFINITY;
         return this.nearestPoint;
     }
 
-    public void nearest(Node current, boolean isVertical, Point2D query, double xmin, double ymin, double xmax, double ymax) {
+    private void nearest(Node current, boolean isVertical, Point2D query, double xmin, double ymin, double xmax, double ymax) {
 
         if (current == null) {
             return;
@@ -246,33 +246,49 @@ public class KdTree {
             this.nearestPoint = current.key;
             message += " is new best dist!";
         }
-        System.out.println(message);
+        if (verbose) {
+            System.out.println(message);
+        }
 
         if (isVertical) {
             Point2D closestPointInOtherRectangle = new Point2D(current.key.x(), query.y());
 
             // left
-            if (query.x < current.key.x) {
+            if (query.x() < current.key.x()) {
                 // update nearest from left side
-                System.out.println("left");
-                double cachedNearestDist = this.nearestDist;
+                if (verbose) {
+                    System.out.println("left");
+                }
                 nearest(current.left, !isVertical, query, xmin, ymin, current.key.x(), ymax);
 
-                if (cachedNearestDist == this.nearestDist) {
+                if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
                     // check right subrect as well
-                    System.out.println("also check right " + current.size);
+                    if (verbose) {
+                        System.out.println("also check right of " + current.size);
+                    }
                     nearest(current.right, !isVertical, query, current.key.x(), ymin, xmax, ymax);
+                } else {
+                    if (verbose) {
+                        System.out.println("didn't check right of " + current.size);
+                    }
                 }
             } else {
                     // update nearest from right side
-                System.out.println("right");
-                double cachedNearestDist = this.nearestDist;
+                if (verbose) {
+                    System.out.println("right");
+                }
                 nearest(current.right, !isVertical, query, current.key.x(), ymin, xmax, ymax);
 
-                if (cachedNearestDist == this.nearestDist) {
+                if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
                         // check left subrect as well
-                    System.out.println("also check left " + current.size);
+                    if (verbose) {
+                        System.out.println("also check left of " + current.size);
+                    }
                     nearest(current.left, !isVertical, query, xmin, ymin, current.key.x(), ymax);
+                } else {
+                    if (verbose) {
+                        System.out.println("didn't check left of " + current.size);
+                    }
                 }
             }
 
@@ -280,27 +296,41 @@ public class KdTree {
             Point2D closestPointInOtherRectangle = new Point2D(query.x(), current.key.y());
 
             // below
-            if (query.y < current.key.y) {
+            if (query.y() < current.key.y()) {
                 // update nearest from below side
-                System.out.println("below");
-                double cachedNearestDist = this.nearestDist;
+                if (verbose) {
+                    System.out.println("below");
+                }
                 nearest(current.left, !isVertical, query, xmin, ymin, xmax, current.key.y());
 
-                if (cachedNearestDist == this.nearestDist) {
+                if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
                     // check above subrect as well
-                    System.out.println("also check above " + current.size);
+                    if (verbose) {
+                        System.out.println("also check above " + current.size);
+                    }
                     nearest(current.right, !isVertical, query, xmin, current.key.y(), xmax, ymax);
+                } else {
+                    if (verbose) {
+                        System.out.println("didn't check above " + current.size);
+                    }
                 }
             } else {
                     // update nearest from above side
-                System.out.println("above");
-                double cachedNearestDist = this.nearestDist;
+                if (verbose) {
+                    System.out.println("above");
+                }
                 nearest(current.right, !isVertical, query, xmin, current.key.y(), xmax, ymax);
 
-                if (cachedNearestDist == this.nearestDist) {
+                if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
                         // check below subrect as well
-                    System.out.println("also check below " + current.size);
+                    if (verbose) {
+                        System.out.println("also check below " + current.size);
+                    }
                     nearest(current.left, !isVertical, query, xmin, ymin, xmax, current.key.y());
+                } else {
+                    if (verbose) {
+                        System.out.println("didn't check above " + current.size);
+                    }
                 }
             }
         }
