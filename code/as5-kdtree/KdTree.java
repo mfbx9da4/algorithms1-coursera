@@ -252,30 +252,27 @@ public class KdTree {
             Point2D closestPointInOtherRectangle = new Point2D(current.key.x(), query.y());
 
             // left
-            RectHV subRect = new RectHV(xmin, ymin, current.key.x(), ymax);
-            System.out.println(subRect);
-            if (subRect.contains(query)) {
+            if (query.x < current.key.x) {
                 // update nearest from left side
                 System.out.println("left");
+                double cachedNearestDist = this.nearestDist;
                 nearest(current.left, !isVertical, query, xmin, ymin, current.key.x(), ymax);
 
-                if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
+                if (cachedNearestDist == this.nearestDist) {
                     // check right subrect as well
                     System.out.println("also check right " + current.size);
                     nearest(current.right, !isVertical, query, current.key.x(), ymin, xmax, ymax);
                 }
             } else {
-                subRect = new RectHV(current.key.x(), ymin, xmax, ymax);
-                if (subRect.contains(query)) {
                     // update nearest from right side
-                    System.out.println("right");
-                    nearest(current.right, !isVertical, query, current.key.x(), ymin, xmax, ymax);
+                System.out.println("right");
+                double cachedNearestDist = this.nearestDist;
+                nearest(current.right, !isVertical, query, current.key.x(), ymin, xmax, ymax);
 
-                    if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
+                if (cachedNearestDist == this.nearestDist) {
                         // check left subrect as well
-                        System.out.println("also check left " + current.size);
-                        nearest(current.left, !isVertical, query, xmin, ymin, current.key.x(), ymax);
-                    }
+                    System.out.println("also check left " + current.size);
+                    nearest(current.left, !isVertical, query, xmin, ymin, current.key.x(), ymax);
                 }
             }
 
@@ -283,30 +280,27 @@ public class KdTree {
             Point2D closestPointInOtherRectangle = new Point2D(query.x(), current.key.y());
 
             // below
-            RectHV subRect = new RectHV(xmin, ymin, xmax, current.key.y());
-            System.out.println(subRect);
-            if (subRect.contains(query)) {
+            if (query.y < current.key.y) {
                 // update nearest from below side
                 System.out.println("below");
+                double cachedNearestDist = this.nearestDist;
                 nearest(current.left, !isVertical, query, xmin, ymin, xmax, current.key.y());
 
-                if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
+                if (cachedNearestDist == this.nearestDist) {
                     // check above subrect as well
                     System.out.println("also check above " + current.size);
                     nearest(current.right, !isVertical, query, xmin, current.key.y(), xmax, ymax);
                 }
             } else {
-                subRect = new RectHV(xmin, current.key.y(), xmax, ymax);
-                if (subRect.contains(query)) {
                     // update nearest from above side
-                    System.out.println("above");
-                    nearest(current.right, !isVertical, query, xmin, current.key.y(), xmax, ymax);
+                System.out.println("above");
+                double cachedNearestDist = this.nearestDist;
+                nearest(current.right, !isVertical, query, xmin, current.key.y(), xmax, ymax);
 
-                    if (query.distanceTo(closestPointInOtherRectangle) < this.nearestDist) {
+                if (cachedNearestDist == this.nearestDist) {
                         // check below subrect as well
-                        System.out.println("also check below " + current.size);
-                        nearest(current.left, !isVertical, query, xmin, ymin, xmax, current.key.y());
-                    }
+                    System.out.println("also check below " + current.size);
+                    nearest(current.left, !isVertical, query, xmin, ymin, xmax, current.key.y());
                 }
             }
         }
